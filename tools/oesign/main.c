@@ -13,6 +13,7 @@
 #include "../host/enclave.h"
 
 static const char* arg0;
+void oedump(const char*);
 
 OE_PRINTF_FORMAT(1, 2)
 void Err(const char* format, ...)
@@ -456,13 +457,29 @@ void _merge_config_file_options(
         properties->header.size_settings.num_tcs = options->num_tcs;
 }
 
-static const char _usage[] =
-    "Usage: %s EnclaveImage ConfigFile KeyFile\n"
+static const char _usage_gen[] =
+    "Usage: %s <command> [options]\n"
+
+    "\n"
+
+    "Commands:\n"
+
+    "    sign  -  Sign the specified enclave.\n"
+
+    "    dump  -  Print out the Open Enclave metadata for the specified "
+    "enclave.\n"
+
+    "\n"
+
+    "For help with a specific command, enter \"%s <command> -?\"\n";
+
+static const char _usage_sign[] =
+    "Usage: %s enclave_image sign config_file key_file\n"
     "\n"
     "Where:\n"
-    "    EnclaveImage -- path of an enclave image file\n"
-    "    ConfigFile -- configuration file containing enclave properties\n"
-    "    KeyFile -- private key file used to digitally sign the image\n"
+    "    enclave_image -- path of an enclave image file\n"
+    "    config_file -- configuration file containing enclave properties\n"
+    "    key_file -- private key file used to digitally sign the image\n"
     "\n"
     "Description:\n"
     "    This utility (1) injects runtime properties into an enclave image "
@@ -497,6 +514,62 @@ static const char _usage[] =
     "    The resulting image is written to <EnclaveImage>.signed.so.\n"
     "\n";
 
+static const char _usage_dump[] =
+    "\n"
+    "Usage: %s enclave_image dump\n"
+    "\n"
+    "Where:\n"
+    "    enclave_image -- path of an enclave image file\n"
+    "\n"
+    "Description:\n"
+    "    This option dumps the oeinfo and signature information of an "
+    "enclave\n";
+
+int arg_handler(int argc, const char* argv[])
+{
+    const char* enclave;
+
+    switch (argc)
+    {
+        case 1:
+        case 2:
+            fprintf(stderr, _usage_gen, argv[0], argv[0]);
+            exit(1);
+        case 3:
+            if (strcmp(argv[1], "dump") == 0)
+            {
+                if (strcmp(argv[2], "-?") == 0)
+                {
+                    fprintf(stderr, _usage_dump, argv[0]);
+                    exit(1);
+                }
+                enclave = argv[2];
+                /* dump oeinfo and signature information */
+                oedump(enclave);
+                exit(0);
+            }
+            else if (strcmp(argv[1], "sign") == 0)
+            {
+                if (strcmp(argv[2], "-?") == 0)
+                {
+                    fprintf(stderr, _usage_sign, argv[0]);
+                    exit(1);
+                }
+
+                fprintf(stderr, _usage_gen, argv[0], argv[0]);
+                exit(1);
+            }
+        case 5:
+            if (strcmp(argv[1], "sign") == 0)
+                return 0;
+            fprintf(stderr, _usage_gen, argv[0], argv[0]);
+            exit(1);
+        default:
+            fprintf(stderr, _usage_gen, argv[0], argv[0]);
+            exit(1);
+    }
+}
+
 int main(int argc, const char* argv[])
 {
     arg0 = argv[0];
@@ -512,17 +585,12 @@ int main(int argc, const char* argv[])
     oe_sgx_enclave_properties_t props;
     oe_sgx_load_context_t context;
 
-    /* Check arguments */
-    if (argc != 4)
-    {
-        fprintf(stderr, _usage, arg0);
-        exit(1);
-    }
+    arg_handler(argc, argv);
 
-    /* Collect arguments */
-    enclave = argv[1];
-    conffile = argv[2];
-    keyfile = argv[3];
+    /* Collect arguments for signing*/
+    enclave = argv[2];
+    conffile = argv[3];
+    keyfile = argv[4];
 
     /* Load the configuration file */
     if (_load_config_file(conffile, &options) != 0)
