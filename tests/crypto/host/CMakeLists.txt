@@ -1,16 +1,26 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
-add_executable(hostcrypto 
+if (UNIX)
+add_executable(hostcrypto
     main.c
     ../asn1_tests.c
     ../crl_tests.c
     ../ec_tests.c
     ../hash.c
+    ../hmac_test.c
     ../random_tests.c
     ../rsa_tests.c
     ../sha_tests.c
     ../tests.c)
+else()
+add_executable(hostcrypto
+    main.c
+    ../hash.c
+    ../hmac_tests.c
+    ../sha_tests.c
+    ../tests.c)
+endif()
 
 target_link_libraries(hostcrypto oehost)
 
