@@ -9,7 +9,8 @@
 set(MUSLSRC ${PROJECT_SOURCE_DIR}/3rdparty/musl/musl/src)
 
 add_library(oelibc STATIC
-    ../common/rand.c
+    #../common/rand.c
+    ../common/rand.s
     abort.S
     arc4random.c
     atexit.c
