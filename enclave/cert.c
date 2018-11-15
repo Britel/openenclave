@@ -22,6 +22,9 @@
 #include "pem.h"
 #include "rsa.h"
 
+static const uint32_t trace_flag =  OE_LOG_FLAGS_ALL |
+                                    OE_LOG_FLAGS_ENCLAVE ;
+
 /*
 **==============================================================================
 **
@@ -207,6 +210,7 @@ OE_INLINE bool _cert_chain_is_valid(const CertChain* impl)
 **==============================================================================
 */
 
+
 static void _set_err(oe_verify_cert_error_t* error, const char* str)
 {
     if (error)
@@ -348,7 +352,10 @@ static oe_result_t _verify_whole_chain(mbedtls_x509_crt* chain)
 
         /* Raise an error if any */
         if (r != 0)
-            OE_RAISE(OE_FAILURE);
+        {
+            OE_CHECK(OE_FAILURE);
+        }
+
 
         /* If the final certificate is not the root */
         if (subchain->next == NULL && root != subchain)
@@ -766,7 +773,7 @@ oe_result_t oe_cert_verify(
             mbedtls_x509_crt_verify_info(
                 error->buf, sizeof(error->buf), "", flags);
         }
-
+        OE_TRACE(OE_LOG_LEVEL_ERROR, "mbedtls_x509_crt_verify failed with flags = %0x\n", flags);
         OE_RAISE(OE_VERIFY_FAILED);
     }
 
@@ -775,21 +782,21 @@ oe_result_t oe_cert_verify(
     {
         /* Verify the current certificate in the chain. */
         if (mbedtls_x509_crt_verify(
-                p,
-                chain_impl->referent->crt,
-                crl_list,
-                NULL,
-                &flags,
-                NULL,
-                NULL) != 0)
+                        p,
+                        chain_impl->referent->crt,
+                        crl_list,
+                        NULL,
+                        &flags,
+                        NULL,
+                        NULL) != 0)
         {
             if (error)
             {
                 mbedtls_x509_crt_verify_info(
                     error->buf, sizeof(error->buf), "", flags);
             }
-
-            OE_RAISE(OE_VERIFY_FAILED);
+            OE_TRACE(OE_LOG_LEVEL_ERROR, "mbedtls_x509_crt_verify failed with flags = %0x\n", flags);
+            OE_CHECK(OE_VERIFY_FAILED);
         }
 
         /* Verify that the CRL list has an issuer for this certificate. */
@@ -798,7 +805,7 @@ oe_result_t oe_cert_verify(
             if (!_crl_list_find_issuer_for_cert(crl_list, p))
             {
                 _set_err(error, "unable to get certificate CRL");
-                OE_RAISE(OE_VERIFY_FAILED);
+                OE_RAISE(OE_VERIFY_FAILED_TO_GET_CERT_CRL);
             }
         }
     }
@@ -870,7 +877,7 @@ oe_result_t oe_cert_get_ec_public_key(
         OE_RAISE(OE_FAILURE);
 
     /* Copy the public key from the certificate */
-    OE_RAISE(oe_ec_public_key_init(public_key, &impl->cert->pk));
+    OE_CHECK(oe_ec_public_key_init(public_key, &impl->cert->pk));
 
     result = OE_OK;
 

@@ -15,6 +15,9 @@
 #include "platformquoteprovider.h"
 #include "sgxquoteprovider.h"
 
+static const uint32_t trace_flag = OE_LOG_FLAGS_SGX_SPECIFIC |
+                    OE_LOG_FLAGS_CERT;
+
 #ifdef OE_USE_LIBSGX
 
 /**
@@ -339,6 +342,7 @@ oe_result_t oe_get_qe_identity_info(oe_get_qe_identity_info_args_t* args)
 
     // fetch qe identity information
     r = _get_qe_identity_info(&identity);
+    OE_RAISE(OE_INVALID_QE_IDENTITY_INFO);
     if (r != SGX_PLAT_ERROR_OK || identity == NULL)
     {
         OE_RAISE(OE_QUOTE_PROVIDER_CALL_ERROR);

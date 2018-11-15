@@ -33,6 +33,16 @@ const char* oe_result_str(oe_result_t result)
             return "OE_UNEXPECTED";
         case OE_VERIFY_FAILED:
             return "OE_VERIFY_FAILED";
+        case OE_VERIFY_FAILED_INVALID_QUOTE_VERSION:
+            return "OE_VERIFY_FAILED_INVALID_QUOTE_VERSION";
+        case OE_VERIFY_FAILED_QE_IDENTITY_MISMATCH:
+            return "OE_VERIFY_FAILED_QE_IDENTITY_MISMATCH";
+        case OE_VERIFY_FAILED_UNEXPECTED_ROOT_PUBLIC_KEY:
+            return "OE_VERIFY_FAILED_UNEXPECTED_ROOT_PUBLIC_KEY";
+        case OE_VERIFY_FAILED_REPORT_DATA_HASH_MISMATCH:
+            return "OE_VERIFY_FAILED_REPORT_DATA_HASH_MISMATCH";
+        case OE_VERIFY_FAILED_TO_GET_CERT_CRL:
+            return "OE_VERIFY_FAILED_TO_GET_CERT_CRL";
         case OE_NOT_FOUND:
             return "OE_NOT_FOUND";
         case OE_INTEGER_OVERFLOW:

@@ -30,6 +30,8 @@
 #include "enclave.h"
 #include "ocalls.h"
 
+static const uint32_t trace_flag = OE_LOG_FLAGS_IMAGE_LOADING;
+
 /*
 **==============================================================================
 **

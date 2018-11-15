@@ -76,6 +76,13 @@ typedef enum _oe_result {
      */
     OE_VERIFY_FAILED,
 
+    OE_VERIFY_FAILED_INVALID_QUOTE_VERSION,
+    OE_VERIFY_FAILED_QE_IDENTITY_MISMATCH,
+    OE_VERIFY_FAILED_UNEXPECTED_ROOT_PUBLIC_KEY,
+    OE_VERIFY_FAILED_REPORT_DATA_HASH_MISMATCH,
+    OE_VERIFY_FAILED_TO_GET_CERT_CRL,
+
+
     /**
      * The function failed to find a resource. Examples of resources include
      * files, directories, and functions (ECALL/OCALL), container elements.

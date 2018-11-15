@@ -25,6 +25,9 @@
 #include "td.h"
 #include "thread.h"
 
+static const uint32_t trace_flag =  OE_LOG_FLAGS_ALL |
+                                    OE_LOG_FLAGS_ENCLAVE;
+
 uint64_t __oe_enclave_status = OE_OK;
 uint8_t __oe_initialized = 0;
 

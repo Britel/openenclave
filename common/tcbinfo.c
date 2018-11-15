@@ -8,6 +8,8 @@
 #include <openenclave/internal/utils.h>
 #include "common.h"
 
+static const uint32_t trace_flag = OE_LOG_FLAGS_SGX_SPECIFIC;
+
 #ifdef OE_USE_LIBSGX
 
 // Public key of Intel's root certificate.

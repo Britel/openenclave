@@ -9,6 +9,9 @@
 #include <openenclave/internal/enclavelibc.h>
 #include <openenclave/internal/raise.h>
 
+static const uint32_t trace_flag = OE_LOG_FLAGS_ALL | 
+                    OE_LOG_FLAGS_ENCLAVE;
+
 /**
  * Validate and copy buffer to enclave memory.
  */

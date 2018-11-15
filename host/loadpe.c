@@ -20,6 +20,8 @@
 #include "sgxload.h"
 #include "strings.h"
 
+static const uint32_t trace_flag = OE_LOG_FLAGS_IMAGE_LOADING;
+
 #if defined(_WIN32)
 #include <windows.h>
 #elif defined(__linux__)
