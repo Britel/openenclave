@@ -10,6 +10,8 @@
 #define Memcmp oe_memcmp
 
 #define GetReport oe_get_report
+#define GetReport_v1 oe_get_report_v1
+#define GetReport_v2 oe_get_report_v2
 
 #define VerifyReport oe_verify_report
 
@@ -25,14 +27,13 @@
 
 oe_enclave_t* g_enclave = NULL;
 
-#ifdef OE_BUILD_ENCLAVE
-#define GetReport(flags, rd, rds, op, ops, rb, rbs) \
-    oe_get_report(g_enclave, flags, rd, rds, op, ops, rb, rbs)
-#else
 // Host side API does not have report_data and report_data_size
 #define GetReport(flags, rd, rds, op, ops, rb, rbs) \
     oe_get_report(g_enclave, flags, op, ops, rb, rbs)
-#endif
+#define GetReport_v1(flags, rd, rds, op, ops, rb, rbs) \
+    oe_get_report_v1(g_enclave, flags, op, ops, rb, rbs)
+#define GetReport_v2(flags, rd, rds, op, ops, rb, rbs) \
+    oe_get_report_v2(g_enclave, flags, op, ops, rb, rbs)
 
 oe_result_t VerifyReport(
     const uint8_t* report,
@@ -193,7 +194,9 @@ TEST_FCN void TestLocalReport(void* args_)
     const uint8_t zeros[OE_REPORT_DATA_SIZE] = {0};
 
     size_t report_size = 1024;
+    size_t report_ptr_size;
     uint8_t report_buffer[1024];
+    uint8_t* report_buffer_ptr;
 
     uint8_t opt_params[sizeof(sgx_target_info_t)];
     for (uint32_t i = 0; i < sizeof(opt_params); ++i)
@@ -220,7 +223,7 @@ TEST_FCN void TestLocalReport(void* args_)
         oe_result_t expected_result = OE_OK;
         report_size = 1024 * 1024;
         OE_TEST(
-            GetReport(0, NULL, 0, NULL, 0, report_buffer, &report_size) ==
+            GetReport_v1(0, NULL, 0, NULL, 0, report_buffer, &report_size) ==
             OE_OK);
 
         if (expected_result == OE_OK)
@@ -229,10 +232,34 @@ TEST_FCN void TestLocalReport(void* args_)
                 report_buffer, report_size, false, zeros, OE_REPORT_DATA_SIZE);
         }
 
+        OE_TEST(
+            GetReport_v2(
+                0, NULL, 0, NULL, 0, &report_buffer_ptr, &report_ptr_size) ==
+            OE_OK);
+
+        if (expected_result == OE_OK)
+        {
+            ValidateReport(
+                report_buffer, report_size, false, zeros, OE_REPORT_DATA_SIZE);
+        }
+        oe_free_report(report_buffer_ptr);
+
+        OE_TEST(
+            GetReport(
+                0, NULL, 0, NULL, 0, &report_buffer_ptr, &report_ptr_size) ==
+            OE_OK);
+
+        if (expected_result == OE_OK)
+        {
+            ValidateReport(
+                report_buffer, report_size, false, zeros, OE_REPORT_DATA_SIZE);
+        }
+        oe_free_report(report_buffer_ptr);
+
         report_size = 1024 * 1024;
         report_data_size = 16;
         OE_TEST(
-            GetReport(
+            GetReport_v1(
                 0,
                 report_data,
                 report_data_size,
@@ -260,7 +287,7 @@ TEST_FCN void TestLocalReport(void* args_)
         report_size = 1024 * 1024;
         report_data_size = OE_REPORT_DATA_SIZE;
         OE_TEST(
-            GetReport(
+            GetReport_v1(
                 0,
                 report_data,
                 report_data_size,
@@ -282,7 +309,7 @@ TEST_FCN void TestLocalReport(void* args_)
         report_size = 1024 * 1024;
         report_data_size = OE_REPORT_DATA_SIZE + 1;
         OE_TEST(
-            GetReport(
+            GetReport_v1(
                 0,
                 report_data,
                 report_data_size,
@@ -301,144 +328,294 @@ TEST_FCN void TestLocalReport(void* args_)
      *     3. opt_params can be zeroed out target info.
      *     4. opt_params can be a valid target info.
      */
-    {
-        report_size = 1024 * 1024;
-        OE_TEST(
-            GetReport(
-                0,
-                NULL,
-                0,
-                NULL,
-                sizeof(opt_params),
-                report_buffer,
-                &report_size) == OE_INVALID_PARAMETER);
-        OE_TEST(
-            GetReport(0, NULL, 0, opt_params, 5, report_buffer, &report_size) ==
-            OE_INVALID_PARAMETER);
+    {{report_size = 1024 * 1024;
+    OE_TEST(
+        GetReport_v1(
+            0,
+            NULL,
+            0,
+            NULL,
+            sizeof(opt_params),
+            report_buffer,
+            &report_size) == OE_INVALID_PARAMETER);
+    OE_TEST(
+        GetReport_v2(
+            0,
+            NULL,
+            0,
+            NULL,
+            sizeof(opt_params),
+            &report_buffer_ptr,
+            &report_ptr_size) == OE_INVALID_PARAMETER);
+    OE_TEST(
+        GetReport(
+            0,
+            NULL,
+            0,
+            NULL,
+            sizeof(opt_params),
+            &report_buffer_ptr,
+            &report_ptr_size) == OE_INVALID_PARAMETER);
+}
 
-        report_size = 1024 * 1024;
-        OE_TEST(
-            GetReport(0, NULL, 0, NULL, 0, report_buffer, &report_size) ==
-            OE_OK);
-        ValidateReport(
-            report_buffer, report_size, false, zeros, OE_REPORT_DATA_SIZE);
+{
+    OE_TEST(
+        GetReport_v1(0, NULL, 0, opt_params, 5, report_buffer, &report_size) ==
+        OE_INVALID_PARAMETER);
+    OE_TEST(
+        GetReport_v2(
+            0, NULL, 0, opt_params, 5, &report_buffer_ptr, &report_ptr_size) ==
+        OE_INVALID_PARAMETER);
+    OE_TEST(
+        GetReport(
+            0, NULL, 0, opt_params, 5, &report_buffer_ptr, &report_ptr_size) ==
+        OE_INVALID_PARAMETER);
 
-        report_size = 1024 * 1024;
-        OE_TEST(
-            GetReport(
-                0,
-                NULL,
-                0,
-                opt_params,
-                sizeof(sgx_target_info_t),
-                report_buffer,
-                &report_size) == OE_OK);
-        OE_TEST(report_size == OE_LOCAL_REPORT_SIZE);
-        ValidateReport(
-            report_buffer, report_size, false, zeros, OE_REPORT_DATA_SIZE);
+    report_size = 1024 * 1024;
+    OE_TEST(
+        GetReport_v1(0, NULL, 0, NULL, 0, report_buffer, &report_size) ==
+        OE_OK);
+    ValidateReport(
+        report_buffer, report_size, false, zeros, OE_REPORT_DATA_SIZE);
+    OE_TEST(
+        GetReport_v2(
+            0, NULL, 0, NULL, 0, &report_buffer_ptr, &report_ptr_size) ==
+        OE_OK);
+    ValidateReport(
+        report_buffer_ptr, report_ptr_size, false, zeros, OE_REPORT_DATA_SIZE);
+    oe_free_report(report_buffer_ptr);
+    report_buffer_ptr = NULL;
+    OE_TEST(
+        GetReport(0, NULL, 0, NULL, 0, &report_buffer_ptr, &report_ptr_size) ==
+        OE_OK);
+    ValidateReport(
+        report_buffer_ptr, report_ptr_size, false, zeros, OE_REPORT_DATA_SIZE);
+    oe_free_report(report_buffer_ptr);
+    report_buffer_ptr = NULL;
+}
 
-        report_size = 1024 * 1024;
-        OE_TEST(
-            GetReport(
-                0,
-                NULL,
-                0,
-                target_info,
-                sizeof(opt_params),
-                report_buffer,
-                &report_size) == OE_OK);
-        OE_TEST(report_size == OE_LOCAL_REPORT_SIZE);
-        ValidateReport(
-            report_buffer, report_size, false, zeros, OE_REPORT_DATA_SIZE);
-    }
+{
+    report_size = 1024 * 1024;
+    OE_TEST(
+        GetReport_v1(
+            0,
+            NULL,
+            0,
+            opt_params,
+            sizeof(sgx_target_info_t),
+            report_buffer,
+            &report_size) == OE_OK);
+    OE_TEST(report_size == OE_LOCAL_REPORT_SIZE);
+    ValidateReport(
+        report_buffer, report_size, false, zeros, OE_REPORT_DATA_SIZE);
 
-    /* oe_get_target_info scenario.
-     *   a. Extract the target_info from the report and use that
-     *      as the opt_params field.
-     *   b. Ensure oe_get_target_info fails on improper inputs.
-     */
-    {
-        sgx_target_info_t target;
-        size_t target_size = 0;
+    OE_TEST(
+        GetReport_v2(
+            0,
+            NULL,
+            0,
+            opt_params,
+            sizeof(sgx_target_info_t),
+            &report_buffer_ptr,
+            &report_ptr_size) == OE_OK);
+    OE_TEST(report_size == OE_LOCAL_REPORT_SIZE);
+    ValidateReport(
+        report_buffer_ptr, report_ptr_size, false, zeros, OE_REPORT_DATA_SIZE);
+    oe_free_report(report_buffer_ptr);
+    report_buffer_ptr = NULL;
 
-        OE_TEST(
-            GetReport(0, NULL, 0, NULL, 0, report_buffer, &report_size) ==
-            OE_OK);
-        ValidateReport(
-            report_buffer, report_size, false, zeros, OE_REPORT_DATA_SIZE);
+    OE_TEST(
+        GetReport(
+            0,
+            NULL,
+            0,
+            opt_params,
+            sizeof(sgx_target_info_t),
+            &report_buffer_ptr,
+            &report_ptr_size) == OE_OK);
+    OE_TEST(report_size == OE_LOCAL_REPORT_SIZE);
+    ValidateReport(
+        report_buffer_ptr, report_ptr_size, false, zeros, OE_REPORT_DATA_SIZE);
+    oe_free_report(report_buffer_ptr);
+    report_buffer_ptr = NULL;
+}
 
-        OE_TEST(
-            oe_get_target_info(
-                report_buffer, report_size, &target, &target_size) ==
-            OE_BUFFER_TOO_SMALL);
-        OE_TEST(target_size == sizeof(target));
+{
+    report_size = 1024 * 1024;
+    OE_TEST(
+        GetReport_v1(
+            0,
+            NULL,
+            0,
+            target_info,
+            sizeof(opt_params),
+            report_buffer,
+            &report_size) == OE_OK);
+    OE_TEST(report_size == OE_LOCAL_REPORT_SIZE);
+    ValidateReport(
+        report_buffer, report_size, false, zeros, OE_REPORT_DATA_SIZE);
 
-        OE_TEST(
-            oe_get_target_info(
-                report_buffer, report_size, &target, &target_size) == OE_OK);
-        OE_TEST(target_size == sizeof(target));
+    OE_TEST(
+        GetReport_v2(
+            0,
+            NULL,
+            0,
+            target_info,
+            sizeof(opt_params),
+            &report_buffer_ptr,
+            &report_ptr_size) == OE_OK);
+    OE_TEST(report_ptr_size == OE_LOCAL_REPORT_SIZE);
+    ValidateReport(
+        report_buffer_ptr, report_ptr_size, false, zeros, OE_REPORT_DATA_SIZE);
+    oe_free_report(report_buffer_ptr);
 
-        OE_TEST(
-            GetReport(
-                0,
-                NULL,
-                0,
-                &target,
-                target_size,
-                report_buffer,
-                &report_size) == OE_OK);
-        ValidateReport(
-            report_buffer, report_size, false, zeros, OE_REPORT_DATA_SIZE);
+    OE_TEST(
+        GetReport(
+            0,
+            NULL,
+            0,
+            target_info,
+            sizeof(opt_params),
+            &report_buffer_ptr,
+            &report_ptr_size) == OE_OK);
+    OE_TEST(report_ptr_size == OE_LOCAL_REPORT_SIZE);
+    ValidateReport(
+        report_buffer_ptr, report_ptr_size, false, zeros, OE_REPORT_DATA_SIZE);
+    oe_free_report(report_buffer_ptr);
+}
+}
 
-        /* Failure cases. */
-        OE_TEST(
-            oe_get_target_info(NULL, report_size, &target, &target_size) ==
-            OE_INVALID_PARAMETER);
+/* oe_get_target_info scenario.
+ *   a. Extract the target_info from the report and use that
+ *      as the opt_params field.
+ *   b. Ensure oe_get_target_info fails on improper inputs.
+ */
+{
+    sgx_target_info_t target;
+    sgx_target_info_t* target_ptr;
+    size_t target_size = 0;
+    size_t target_ptr_size = 0;
 
-        OE_TEST(
-            oe_get_target_info(
-                report_buffer,
-                sizeof(oe_report_header_t) + sizeof(sgx_report_t) - 1,
-                &target,
-                &target_size) == OE_INVALID_PARAMETER);
+    OE_TEST(
+        GetReport_v1(0, NULL, 0, NULL, 0, report_buffer, &report_size) ==
+        OE_OK);
+    ValidateReport(
+        report_buffer, report_size, false, zeros, OE_REPORT_DATA_SIZE);
 
-        OE_TEST(
-            oe_get_target_info(report_buffer, report_size, &target, NULL) ==
-            OE_INVALID_PARAMETER);
+    OE_TEST(
+        oe_get_target_info_v1(
+            report_buffer, report_size, &target, &target_size) ==
+        OE_BUFFER_TOO_SMALL);
+    OE_TEST(target_size == sizeof(target));
 
-        target_size = sizeof(target) + 1;
-        OE_TEST(
-            oe_get_target_info(
-                report_buffer, report_size, NULL, &target_size) ==
-            OE_BUFFER_TOO_SMALL);
-        OE_TEST(target_size == sizeof(target));
+    OE_TEST(
+        oe_get_target_info_v1(
+            report_buffer, report_size, &target, &target_size) == OE_OK);
+    OE_TEST(target_size == sizeof(target));
 
-        target_size = sizeof(target) - 1;
-        OE_TEST(
-            oe_get_target_info(
-                report_buffer, report_size, &target, &target_size) ==
-            OE_BUFFER_TOO_SMALL);
-        OE_TEST(target_size == sizeof(target));
-    }
+    OE_TEST(
+        oe_get_target_info_v2(
+            report_buffer,
+            report_size,
+            (void**)&target_ptr,
+            &target_ptr_size) == OE_OK);
+    OE_TEST(target_ptr_size == sizeof(target));
+    oe_free_target_info(target_ptr);
 
-    /*
-     * OE_SMALL_BUFFER scenarios:
-     *     a. NULL buffer
-     *     b. Size too small.
-     */
-    {
-        report_size = 1024 * 1204;
-        OE_TEST(
-            GetReport(0, NULL, 0, NULL, 0, NULL, &report_size) ==
-            OE_BUFFER_TOO_SMALL);
-        OE_TEST(report_size == OE_LOCAL_REPORT_SIZE);
+    target_ptr = NULL;
+    target_ptr_size = 0;
+    OE_TEST(
+        oe_get_target_info(
+            report_buffer,
+            report_size,
+            (void**)&target_ptr,
+            &target_ptr_size) == OE_OK);
+    OE_TEST(target_ptr_size == sizeof(target));
+    oe_free_target_info(target_ptr);
 
-        report_size = 1;
-        OE_TEST(
-            GetReport(0, NULL, 0, NULL, 0, report_buffer, &report_size) ==
-            OE_BUFFER_TOO_SMALL);
-        OE_TEST(report_size == OE_LOCAL_REPORT_SIZE);
-    }
+    OE_TEST(
+        GetReport_v1(
+            0, NULL, 0, &target, target_size, report_buffer, &report_size) ==
+        OE_OK);
+    ValidateReport(
+        report_buffer, report_size, false, zeros, OE_REPORT_DATA_SIZE);
+
+    /* Failure cases. */
+    OE_TEST(
+        oe_get_target_info_v1(NULL, report_size, &target, &target_size) ==
+        OE_INVALID_PARAMETER);
+    OE_TEST(
+        oe_get_target_info_v2(
+            NULL, report_size, (void**)&target_ptr, &target_ptr_size) ==
+        OE_INVALID_PARAMETER);
+    OE_TEST(
+        oe_get_target_info(
+            NULL, report_size, (void**)&target_ptr, &target_ptr_size) ==
+        OE_INVALID_PARAMETER);
+
+    OE_TEST(
+        oe_get_target_info_v1(
+            report_buffer,
+            sizeof(oe_report_header_t) + sizeof(sgx_report_t) - 1,
+            &target,
+            &target_size) == OE_INVALID_PARAMETER);
+    OE_TEST(
+        oe_get_target_info_v2(
+            report_buffer,
+            sizeof(oe_report_header_t) + sizeof(sgx_report_t) - 1,
+            (void**)&target_ptr,
+            &target_ptr_size) == OE_INVALID_PARAMETER);
+    OE_TEST(
+        oe_get_target_info(
+            report_buffer,
+            sizeof(oe_report_header_t) + sizeof(sgx_report_t) - 1,
+            (void**)&target_ptr,
+            &target_ptr_size) == OE_INVALID_PARAMETER);
+
+    OE_TEST(
+        oe_get_target_info_v1(report_buffer, report_size, &target, NULL) ==
+        OE_INVALID_PARAMETER);
+    OE_TEST(
+        oe_get_target_info_v2(
+            report_buffer, report_size, (void**)&target_ptr, NULL) ==
+        OE_INVALID_PARAMETER);
+    OE_TEST(
+        oe_get_target_info_v2(
+            report_buffer, report_size, (void**)&target_ptr, NULL) ==
+        OE_INVALID_PARAMETER);
+
+    target_size = sizeof(target) + 1;
+    OE_TEST(
+        oe_get_target_info_v1(report_buffer, report_size, NULL, &target_size) ==
+        OE_BUFFER_TOO_SMALL);
+    OE_TEST(target_size == sizeof(target));
+
+    target_size = sizeof(target) - 1;
+    OE_TEST(
+        oe_get_target_info_v1(
+            report_buffer, report_size, &target, &target_size) ==
+        OE_BUFFER_TOO_SMALL);
+    OE_TEST(target_size == sizeof(target));
+}
+
+/*
+ * OE_SMALL_BUFFER scenarios:
+ *     a. NULL buffer
+ *     b. Size too small.
+ */
+{
+    report_size = 1024 * 1204;
+    OE_TEST(
+        GetReport_v1(0, NULL, 0, NULL, 0, NULL, &report_size) ==
+        OE_BUFFER_TOO_SMALL);
+    OE_TEST(report_size == OE_LOCAL_REPORT_SIZE);
+
+    report_size = 1;
+    OE_TEST(
+        GetReport_v1(0, NULL, 0, NULL, 0, report_buffer, &report_size) ==
+        OE_BUFFER_TOO_SMALL);
+    OE_TEST(report_size == OE_LOCAL_REPORT_SIZE);
+}
 }
 
 TEST_FCN void TestRemoteReport(void* args_)
@@ -452,7 +629,9 @@ TEST_FCN void TestRemoteReport(void* args_)
 #endif
 
     uint8_t report_buffer[OE_MAX_REPORT_SIZE];
+    uint8_t* report_buffer_ptr;
     size_t report_size = sizeof(report_buffer);
+    size_t report_ptr_size;
 
     uint8_t opt_params[sizeof(sgx_target_info_t)];
     for (uint32_t i = 0; i < sizeof(opt_params); ++i)
@@ -478,15 +657,15 @@ TEST_FCN void TestRemoteReport(void* args_)
         oe_result_t expected_result = OE_OK;
         report_size = sizeof(report_buffer);
         OE_TEST(
-            GetReport(flags, NULL, 0, NULL, 0, report_buffer, &report_size) ==
-            OE_OK);
+            GetReport_v1(
+                flags, NULL, 0, NULL, 0, report_buffer, &report_size) == OE_OK);
         ValidateReport(
             report_buffer, report_size, true, zeros, OE_REPORT_DATA_SIZE);
 
         report_size = sizeof(report_buffer);
         report_data_size = 16;
         OE_TEST(
-            GetReport(
+            GetReport_v1(
                 flags,
                 report_data,
                 report_data_size,
@@ -513,7 +692,7 @@ TEST_FCN void TestRemoteReport(void* args_)
         report_size = sizeof(report_buffer);
         report_data_size = OE_REPORT_DATA_SIZE;
         OE_TEST(
-            GetReport(
+            GetReport_v1(
                 flags,
                 report_data,
                 report_data_size,
@@ -534,7 +713,7 @@ TEST_FCN void TestRemoteReport(void* args_)
         report_size = sizeof(report_buffer);
         report_data_size = OE_REPORT_DATA_SIZE + 1;
         OE_TEST(
-            GetReport(
+            GetReport_v1(
                 flags,
                 report_data,
                 report_data_size,
@@ -552,7 +731,7 @@ TEST_FCN void TestRemoteReport(void* args_)
     {
         report_size = sizeof(report_buffer);
         OE_TEST(
-            GetReport(
+            GetReport_v1(
                 flags,
                 NULL,
                 0,
@@ -561,9 +740,45 @@ TEST_FCN void TestRemoteReport(void* args_)
                 report_buffer,
                 &report_size) == OE_INVALID_PARAMETER);
         OE_TEST(
+            GetReport_v2(
+                flags,
+                NULL,
+                0,
+                NULL,
+                sizeof(opt_params),
+                &report_buffer_ptr,
+                &report_ptr_size) == OE_INVALID_PARAMETER);
+        OE_TEST(
             GetReport(
+                flags,
+                NULL,
+                0,
+                NULL,
+                sizeof(opt_params),
+                &report_buffer_ptr,
+                &report_ptr_size) == OE_INVALID_PARAMETER);
+        OE_TEST(
+            GetReport_v1(
                 flags, NULL, 0, opt_params, 5, report_buffer, &report_size) ==
             OE_INVALID_PARAMETER);
+        OE_TEST(
+            GetReport_v2(
+                flags,
+                NULL,
+                0,
+                opt_params,
+                5,
+                &report_buffer_ptr,
+                &report_ptr_size) == OE_INVALID_PARAMETER);
+        OE_TEST(
+            GetReport(
+                flags,
+                NULL,
+                0,
+                opt_params,
+                5,
+                &report_buffer_ptr,
+                &report_ptr_size) == OE_INVALID_PARAMETER);
     }
 
     /*
@@ -575,23 +790,43 @@ TEST_FCN void TestRemoteReport(void* args_)
         report_size = sizeof(report_buffer);
 
         OE_TEST(
-            GetReport(flags, NULL, 0, NULL, 0, NULL, &report_size) ==
+            GetReport_v1(flags, NULL, 0, NULL, 0, NULL, &report_size) ==
             OE_BUFFER_TOO_SMALL);
+        OE_TEST(
+            GetReport_v2(flags, NULL, 0, NULL, 0, NULL, &report_size) ==
+            OE_INVALID_PARAMETER);
+        OE_TEST(
+            GetReport(flags, NULL, 0, NULL, 0, NULL, &report_size) ==
+            OE_INVALID_PARAMETER);
 
         // Assert that with the returned report_size buffer can be created.
         OE_TEST(
-            GetReport(flags, NULL, 0, NULL, 0, report_buffer, &report_size) ==
+            GetReport_v1(
+                flags, NULL, 0, NULL, 0, report_buffer, &report_size) == OE_OK);
+        report_buffer_ptr = NULL;
+        OE_TEST(
+            GetReport_v2(
+                flags, NULL, 0, NULL, 0, &report_buffer_ptr, &report_size) ==
             OE_OK);
+        oe_free_report(report_buffer_ptr);
+        report_buffer_ptr = NULL;
+        OE_TEST(
+            GetReport(
+                flags, NULL, 0, NULL, 0, &report_buffer_ptr, &report_size) ==
+            OE_OK);
+        oe_free_report(report_buffer_ptr);
+        report_buffer_ptr = NULL;
 
         report_size = 1;
         OE_TEST(
-            GetReport(flags, NULL, 0, NULL, 0, report_buffer, &report_size) ==
+            GetReport_v1(
+                flags, NULL, 0, NULL, 0, report_buffer, &report_size) ==
             OE_BUFFER_TOO_SMALL);
 
         // Assert that with the returned report_size buffer can be created.
         OE_TEST(
-            GetReport(flags, NULL, 0, NULL, 0, report_buffer, &report_size) ==
-            OE_OK);
+            GetReport_v1(
+                flags, NULL, 0, NULL, 0, report_buffer, &report_size) == OE_OK);
     }
 }
 
@@ -624,7 +859,8 @@ TEST_FCN void TestParseReportNegative(void* args_)
     // Get a valid report and tweak fields.
     size_t report_size = OE_MAX_REPORT_SIZE;
     OE_TEST(
-        GetReport(0, NULL, 0, NULL, 0, report_buffer, &report_size) == OE_OK);
+        GetReport_v1(0, NULL, 0, NULL, 0, report_buffer, &report_size) ==
+        OE_OK);
     OE_TEST(
         oe_parse_report(report_buffer, report_size, &parsed_report) == OE_OK);
 
@@ -666,7 +902,8 @@ static void GetSGXTargetInfo(sgx_target_info_t* sgx_target_info)
     sgx_report_t* sgx_report = (sgx_report_t*)header->report;
 
     OE_TEST(
-        GetReport(0, NULL, 0, NULL, 0, report_buffer, &report_size) == OE_OK);
+        GetReport_v1(0, NULL, 0, NULL, 0, report_buffer, &report_size) ==
+        OE_OK);
 
     Memset(sgx_target_info, 0, sizeof(*sgx_target_info));
     Memcpy(
@@ -702,7 +939,7 @@ TEST_FCN void TestLocalVerifyReport(void* args_)
 
     // 1. Report with no custom report data.
     OE_TEST(
-        GetReport(
+        GetReport_v1(
             0, NULL, 0, target_info, target_info_size, report, &report_size) ==
         OE_OK);
     OE_TEST(VerifyReport(report, report_size, NULL) == OE_OK);
@@ -710,7 +947,7 @@ TEST_FCN void TestLocalVerifyReport(void* args_)
 // 2. Report with full custom report data.
 #ifdef OE_BUILD_ENCLAVE
     OE_TEST(
-        GetReport(
+        GetReport_v1(
             0,
             report_data,
             sizeof(report_data),
@@ -722,7 +959,7 @@ TEST_FCN void TestLocalVerifyReport(void* args_)
 
     // 3. Report with partial custom report data.
     OE_TEST(
-        GetReport(
+        GetReport_v1(
             0,
             report_data,
             sizeof(report_data) / 2,
@@ -740,7 +977,7 @@ TEST_FCN void TestLocalVerifyReport(void* args_)
     tampered_target_info->mrenclave[0]++;
 
     OE_TEST(
-        GetReport(
+        GetReport_v1(
             0, NULL, 0, target_info, target_info_size, report, &report_size) ==
         OE_OK);
     OE_TEST(VerifyReport(report, report_size, NULL) == OE_VERIFY_FAILED);
@@ -773,15 +1010,15 @@ TEST_FCN void TestRemoteVerifyReport(void* args_)
     {
         report_size = sizeof(report_buffer);
         OE_TEST(
-            GetReport(flags, NULL, 0, NULL, 0, report_buffer, &report_size) ==
-            OE_OK);
+            GetReport_v1(
+                flags, NULL, 0, NULL, 0, report_buffer, &report_size) == OE_OK);
         OE_TEST(VerifyReport(report_buffer, report_size, NULL) == OE_OK);
 
 #if OE_BUILD_ENCLAVE
         report_size = sizeof(report_buffer);
         report_data_size = 16;
         OE_TEST(
-            GetReport(
+            GetReport_v1(
                 flags,
                 report_data,
                 report_data_size,
@@ -794,7 +1031,7 @@ TEST_FCN void TestRemoteVerifyReport(void* args_)
         report_size = sizeof(report_buffer);
         report_data_size = OE_REPORT_DATA_SIZE;
         OE_TEST(
-            GetReport(
+            GetReport_v1(
                 flags,
                 report_data,
                 report_data_size,

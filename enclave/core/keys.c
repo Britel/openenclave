@@ -122,7 +122,7 @@ oe_result_t oe_get_key(
     return _get_key_imp(sgx_key_request, sgx_key);
 }
 
-oe_result_t oe_get_seal_key(
+oe_result_t oe_get_seal_key_v1(
     const uint8_t* key_info,
     size_t key_info_size,
     uint8_t* key_buffer,
@@ -155,6 +155,45 @@ oe_result_t oe_get_seal_key(
     }
 
     return ret;
+}
+
+oe_result_t oe_get_seal_key_v2(
+    const uint8_t* key_info,
+    size_t key_info_size,
+    uint8_t** key_buffer,
+    size_t* key_buffer_size)
+{
+    oe_result_t result;
+
+    *key_buffer = NULL;
+
+    result = oe_get_seal_key_v1(key_info, key_info_size, NULL, key_buffer_size);
+    if (result != OE_BUFFER_TOO_SMALL)
+    {
+        return result;
+    }
+
+    *key_buffer = oe_calloc(1, *key_buffer_size);
+    if (*key_buffer == NULL)
+    {
+        *key_buffer_size = 0;
+        return OE_OUT_OF_MEMORY;
+    }
+
+    result = oe_get_seal_key_v1(
+        key_info, key_info_size, *key_buffer, key_buffer_size);
+    if (result != OE_OK)
+    {
+        oe_free(*key_buffer);
+        *key_buffer = NULL;
+    }
+
+    return result;
+}
+
+void oe_free_keys(uint8_t* key_buffer)
+{
+    oe_free(key_buffer);
 }
 
 /*
@@ -196,7 +235,7 @@ done:
     return result;
 }
 
-oe_result_t oe_get_seal_key_by_policy(
+oe_result_t oe_get_seal_key_by_policy_v1(
     oe_seal_policy_t seal_policy,
     uint8_t* key_buffer,
     size_t* key_buffer_size,
@@ -274,4 +313,87 @@ oe_result_t oe_get_seal_key_by_policy(
 
 done:
     return result;
+}
+
+oe_result_t oe_get_seal_key_by_policy_v2(
+    oe_seal_policy_t seal_policy,
+    uint8_t** _key_buffer,
+    size_t* _key_buffer_size,
+    uint8_t** _key_info,
+    size_t* _key_info_size)
+{
+    oe_result_t result;
+    uint8_t* key_buffer = NULL;
+    size_t key_buffer_size = 0;
+    uint8_t* key_info = NULL;
+    size_t key_info_size = 0;
+
+    if ((_key_buffer && !_key_buffer_size) ||
+        (!_key_buffer && _key_buffer_size) ||
+        (!_key_buffer && !_key_buffer_size))
+    {
+        return OE_INVALID_PARAMETER;
+    }
+
+    if ((_key_info && !_key_info_size) || (!_key_info && _key_info_size))
+    {
+        return OE_INVALID_PARAMETER;
+    }
+
+    if (_key_buffer)
+    {
+        *_key_buffer = NULL;
+        key_buffer_size = sizeof(sgx_key_t);
+        key_buffer = oe_calloc(1, key_buffer_size);
+        if (key_buffer == NULL)
+        {
+            return OE_OUT_OF_MEMORY;
+        }
+    }
+
+    if (_key_info)
+    {
+        *_key_info = NULL;
+        key_info_size = sizeof(sgx_key_request_t);
+        key_info = oe_calloc(1, key_info_size);
+        if (key_info == NULL)
+        {
+            oe_free(key_buffer);
+            return OE_OUT_OF_MEMORY;
+        }
+    }
+
+    result = oe_get_seal_key_by_policy_v1(
+        seal_policy, key_buffer, &key_buffer_size, key_info, &key_info_size);
+    if (result != OE_OK)
+    {
+        oe_free(key_info);
+        oe_free(key_buffer);
+    }
+    else
+    {
+        if (_key_buffer)
+        {
+            *_key_buffer = key_buffer;
+        }
+        if (_key_buffer_size)
+        {
+            *_key_buffer_size = key_buffer_size;
+        }
+        if (_key_info)
+        {
+            *_key_info = key_info;
+        }
+        if (_key_info_size)
+        {
+            *_key_info_size = key_info_size;
+        }
+    }
+    return result;
+}
+
+void oe_free_key(uint8_t* key_buffer, uint8_t* key_info)
+{
+    oe_free(key_buffer);
+    oe_free(key_info);
 }

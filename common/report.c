@@ -155,7 +155,7 @@ done:
     return result;
 }
 
-oe_result_t oe_get_target_info(
+oe_result_t oe_get_target_info_v1(
     const uint8_t* report,
     size_t report_size,
     void* target_info_buffer,
@@ -189,4 +189,43 @@ oe_result_t oe_get_target_info(
 
 done:
     return result;
+}
+
+oe_result_t oe_get_target_info_v2(
+    const uint8_t* report,
+    size_t report_size,
+    void** target_info_buffer,
+    size_t* target_info_size)
+{
+    oe_result_t result = OE_FAILURE;
+
+    *target_info_buffer = NULL;
+
+    result = oe_get_target_info_v1(report, report_size, NULL, target_info_size);
+    if (result != OE_BUFFER_TOO_SMALL)
+    {
+        return result;
+    }
+
+    *target_info_buffer = malloc(*target_info_size);
+    if (*target_info_buffer == NULL)
+    {
+        *target_info_size = 0;
+        return OE_OUT_OF_MEMORY;
+    }
+
+    result = oe_get_target_info_v1(
+        report, report_size, *target_info_buffer, target_info_size);
+    if (result != OE_OK)
+    {
+        free(*target_info_buffer);
+        *target_info_buffer = NULL;
+    }
+
+    return result;
+}
+
+void oe_free_target_info(void* target_info_buffer)
+{
+    free(target_info_buffer);
 }
