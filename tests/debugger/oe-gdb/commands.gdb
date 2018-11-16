@@ -14,7 +14,8 @@ end
 
 # Set a breakpoint in enc.c (enclave)
 # This is a pending break point.
-b enc.c:10
+# Same line as function signature.
+b enc.c:17
 commands 2
     printf "** Hit breakpoint in enclave\n"
 
@@ -35,17 +36,30 @@ commands 2
     continue 
 end
 
-
-b enc.c:12
+# Breakpoint in function body.
+b enc.c:26
 commands 3
     printf "** c = %d\n", c
+
+    if c != 11
+        printf "** Error: c != 11\n"
+        quit 1
+    end
+
+    printf "Setting c\n"
     set variable c = 100
     continue
 end
 
-b enc.c:13
+# Breakpoint in function body.
+b enc.c:30
 commands 4
     printf "** c = %d\n", c
+
+    if c != 100
+        printf "** Error: c != 100\n"
+        quit 1
+    end
 
     # Call a function defined within the enclave
     call square(c)
@@ -59,7 +73,7 @@ end
 run
 
 # Check if program aborted or returned non zero.
-if $_isvoid($_exitcode) || #_exitcode
+if $_isvoid($_exitcode) || $_exitcode
     printf "** Test aborted\n"
     quit 1
 end
