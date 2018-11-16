@@ -11,7 +11,8 @@
 #include <string.h>
 #include "init.h"
 
-static const uint32_t trace_flag = OE_LOG_FLAGS_CRYPTO;
+static const uint32_t trace_flag = OE_LOG_FLAGS_CRYPTO |
+                                   OE_LOG_FLAGS_ENC_HOST;
 
 bool oe_private_key_is_valid(const oe_private_key_t* impl, uint64_t magic)
 {

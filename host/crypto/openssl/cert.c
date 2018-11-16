@@ -24,7 +24,8 @@
 #include "init.h"
 #include "rsa.h"
 
-static const uint32_t trace_flag = OE_LOG_FLAGS_CERT;
+static const uint32_t trace_flag = OE_LOG_FLAGS_CERT |
+                                   OE_LOG_FLAGS_ENC_HOST;
 
 /*
 **==============================================================================

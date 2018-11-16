@@ -13,7 +13,8 @@
 #include <string.h>
 #include <time.h>
 
-static const uint32_t trace_flag = OE_LOG_FLAGS_CRYPTO;
+static const uint32_t trace_flag = OE_LOG_FLAGS_CRYPTO |
+                                   OE_LOG_FLAGS_ENC_HOST;
 
 /* Randomly generated magic number */
 #define OE_CRL_MAGIC 0xe8c993b1cca24906

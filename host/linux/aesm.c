@@ -14,7 +14,8 @@
 #include <sys/un.h>
 #include <unistd.h>
 
-static const uint32_t trace_flag = OE_LOG_FLAGS_OTHERS;
+static const uint32_t trace_flag = OE_LOG_FLAGS_OTHERS |
+                                   OE_LOG_FLAGS_ENC_HOST;
 
 /*
 **==============================================================================

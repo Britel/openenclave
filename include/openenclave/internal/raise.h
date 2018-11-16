@@ -111,9 +111,9 @@ typedef enum _oe_log_level
         if (result != OE_OK)            \
         {                               \
             OE_TRACE(OE_LOG_LEVEL_ERROR,\
-            "Failed: %s: %s:%s:%d (%s)\n",        \
-            ((trace_flag & OE_LOG_FLAGS_ENCLAVE) ? "enclave" : \
-             (trace_flag & OE_LOG_FLAGS_ENC_HOST) ? "host" : "*"),\
+            "Failed:%s:%s:%s:%d (%s)\n",        \
+            ((trace_flag & OE_LOG_FLAGS_ENCLAVE) ? "e" : \
+             (trace_flag & OE_LOG_FLAGS_ENC_HOST) ? "h" : "*"),\
             __FILE__, __FUNCTION__, __LINE__, oe_result_str(result));\
         }\
         goto done;                                               \

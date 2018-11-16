@@ -15,8 +15,9 @@
 #include "platformquoteprovider.h"
 #include "sgxquoteprovider.h"
 
-static const uint32_t trace_flag = OE_LOG_FLAGS_SGX_SPECIFIC |
-                    OE_LOG_FLAGS_CERT;
+static const uint32_t trace_flag =  OE_LOG_FLAGS_SGX_SPECIFIC |
+                                    OE_LOG_FLAGS_CERT |
+                                    OE_LOG_FLAGS_ENC_HOST;
 
 #ifdef OE_USE_LIBSGX
 

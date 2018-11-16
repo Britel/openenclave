@@ -11,7 +11,8 @@
 #include <openssl/pem.h>
 #include <string.h>
 
-static const uint32_t trace_flag = OE_LOG_FLAGS_CRYPTO;
+static const uint32_t trace_flag = OE_LOG_FLAGS_CRYPTO |
+                                   OE_LOG_FLAGS_ENC_HOST;
 
 OE_STATIC_ASSERT(V_ASN1_CONSTRUCTED == OE_ASN1_TAG_CONSTRUCTED);
 OE_STATIC_ASSERT(V_ASN1_SEQUENCE == OE_ASN1_TAG_SEQUENCE);

@@ -17,7 +17,8 @@
 #include <openenclave/internal/aesm.h>
 #endif
 
-static const uint32_t trace_flag = OE_LOG_FLAGS_VERIFY_REPORT;
+static const uint32_t trace_flag = OE_LOG_FLAGS_VERIFY_REPORT |
+                                   OE_LOG_FLAGS_ENC_HOST;
 
 #if !defined(OE_USE_LIBSGX)
 

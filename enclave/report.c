@@ -12,7 +12,6 @@
 #include <openenclave/internal/raise.h>
 #include <openenclave/internal/report.h>
 #include <openenclave/internal/sgxtypes.h>
-//#include <openenclave/internal/trace.h>
 #include <openenclave/internal/utils.h>
 #include "../common/quote.h"
 
@@ -66,7 +65,7 @@ oe_result_t oe_verify_report(
     oe_aes_cmac_t report_aes_cmac = {{0}};
     oe_aes_cmac_t computed_aes_cmac = {{0}};
 
-    OE_TRACE(OE_LOG_LEVEL_INFO, "==Calling %s", __PRETTY_FUNCTION__);
+    OE_TRACE(OE_LOG_LEVEL_INFO, "Calling %s\n", __PRETTY_FUNCTION__);
     // Ensure that the report is parseable before using the header.
     OE_CHECK(oe_parse_report(report, report_size, &oe_report));
 

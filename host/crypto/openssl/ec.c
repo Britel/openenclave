@@ -13,7 +13,8 @@
 #include "init.h"
 #include "key.h"
 
-static const uint32_t trace_flag = OE_LOG_FLAGS_CRYPTO;
+static const uint32_t trace_flag = OE_LOG_FLAGS_CRYPTO |
+                                   OE_LOG_FLAGS_ENC_HOST;
 
 /* Magic numbers for the EC key implementation structures */
 static const uint64_t _PRIVATE_KEY_MAGIC = 0x19a751419ae04bbc;

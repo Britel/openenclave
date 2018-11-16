@@ -19,7 +19,8 @@
 #include <openenclave/internal/raise.h>
 #include <openenclave/internal/sha.h>
 
-static const uint32_t trace_flag = OE_LOG_FLAGS_CRYPTO;
+static const uint32_t trace_flag = OE_LOG_FLAGS_CRYPTO |
+                                   OE_LOG_FLAGS_ENC_HOST;
 
 typedef struct _oe_sha256_context_impl
 {

@@ -26,7 +26,8 @@
 #include "sgxload.h"
 #include "strings.h"
 
-static const uint32_t trace_flag = OE_LOG_FLAGS_IMAGE_LOADING;
+static const uint32_t trace_flag = OE_LOG_FLAGS_IMAGE_LOADING |
+                                   OE_LOG_FLAGS_ENC_HOST;
 
 static oe_result_t _oe_free_elf_image(oe_enclave_image_t* image)
 {

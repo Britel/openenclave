@@ -14,7 +14,8 @@
 #include "key.h"
 #include "rsa.h"
 
-static const uint32_t trace_flag = OE_LOG_FLAGS_CRYPTO;
+static const uint32_t trace_flag = OE_LOG_FLAGS_CRYPTO |
+                                   OE_LOG_FLAGS_ENC_HOST;
 
 /* Magic numbers for the RSA key implementation structures */
 static const uint64_t _PRIVATE_KEY_MAGIC = 0x7bf635929a714b2c;

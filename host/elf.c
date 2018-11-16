@@ -16,7 +16,8 @@
 #include "fopen.h"
 #include "strings.h"
 
-static const uint32_t trace_flag = OE_LOG_FLAGS_IMAGE_LOADING;
+static const uint32_t trace_flag = OE_LOG_FLAGS_IMAGE_LOADING |
+                                   OE_LOG_FLAGS_ENC_HOST;
 
 #define GOTO(LABEL)                                            \
     do                                                         \

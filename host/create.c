@@ -12,7 +12,8 @@
 #elif defined(_WIN32)
 #include <windows.h>
 
-static const uint32_t trace_flag = OE_LOG_FLAGS_IMAGE_LOADING;
+static const uint32_t trace_flag = OE_LOG_FLAGS_IMAGE_LOADING |
+                                   OE_LOG_FLAGS_ENC_HOST;
 
 static const char* get_fullpath(const char* path)
 {
@@ -55,7 +56,8 @@ static const char* get_fullpath(const char* path)
 #include "memalign.h"
 #include "sgxload.h"
 
-static const uint32_t trace_flag = OE_LOG_FLAGS_IMAGE_LOADING;
+static const uint32_t trace_flag = OE_LOG_FLAGS_IMAGE_LOADING |
+                                   OE_LOG_FLAGS_ENC_HOST;
 static oe_once_type _enclave_init_once;
 
 static void _initialize_exception_handling(void)
